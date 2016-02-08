@@ -1,0 +1,10 @@
+<resources>
+
+    <color name="black_overlay">#66000000</color>
+
+    <!-- see https://wiki.freifunk.net/Freifunk-Styles -->
+    <color name="primary">#dc0067</color>
+    <color name="accent">#ffb400</color>
+    <color name="primary_dark">#c8005e</color>
+
+</resources>

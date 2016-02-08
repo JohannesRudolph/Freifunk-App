@@ -1,0 +1,28 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <EditTextPreference
+        android:inputType="date"
+        android:enabled="false"
+        android:defaultValue="never"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Last sync at"
+        android:summary="Display 10 closest nodes"
+        android:key="@string/prefkey_sync_last"
+        ></EditTextPreference>
+
+    <EditTextPreference
+        android:inputType="number"
+        android:enabled="false"
+        android:defaultValue="0"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Number of nodes in repository"
+        android:summary="0"
+        android:key="@string/prefkey_sync_nodes"
+        ></EditTextPreference>
+
+</PreferenceScreen>
