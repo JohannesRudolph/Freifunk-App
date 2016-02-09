@@ -34,7 +34,7 @@ public class SurroundingNodesSetup extends Setup implements CameraView.CameraPar
 
     @Override
     protected GLRenderer buildRenderer(TextureManager textureManager) {
-        return new GL1Renderer(textureManager); // todo: initialize FOV
+        return new GL1Renderer(textureManager);
     }
 
     @Override
