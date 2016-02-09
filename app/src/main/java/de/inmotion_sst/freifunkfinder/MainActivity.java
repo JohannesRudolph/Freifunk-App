@@ -1,7 +1,7 @@
 package de.inmotion_sst.freifunkfinder;
 
 import android.app.ProgressDialog;
-import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -18,6 +18,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -40,10 +41,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private NodeMapFragment mapFragment;
     private Fragment currentFragment;
+    private FloatingActionButton cameraActionButton;
+    private NodeRepository nodeRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        nodeRepository = ((FreifunkApplication) getApplication()).getNodeRepository();
+        loadNodesInBackground();
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -62,14 +69,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setupActionButtons() {
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.action_button_ar);
-        fab.setOnClickListener(view -> launchCameraActivity());
+        cameraActionButton = (FloatingActionButton) findViewById(R.id.action_button_ar);
+        cameraActionButton.setOnClickListener(view -> launchCameraActivity());
+        updateActionButtonEnabled();
+    }
+
+    private void updateActionButtonEnabled() {
+        cameraActionButton.setEnabled(nodeRepository.hasNodes());
     }
 
     private void launchCameraActivity() {
-        // todo: ensure this is not null, enable button only when it makes sensse
         Location myLocation = mapFragment.getCurrentLocation();
-
+        if (myLocation == null){
+            showError("Could not determine precise location. Improve GPS reception, then retry.");
+            return;
+        }
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         int n = Integer.parseInt(preferences.getString(getResources().getString(R.string.prefkey_ar_nodes), "5"));
@@ -81,7 +95,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, String.format("starting AR view with %d nodes at location (%f,%f,%.1fm)", nodes.size(), myLocation.getLatitude(), myLocation.getLongitude(), myLocation.getAltitude()));
         CameraFinderActivity.startWithSetup(this, setup);
     }
-
 
     @Override
     public void onBackPressed() {
@@ -108,7 +121,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.action_refresh) {
-            refreshNodes();
+            updateNodesFromServer();
         }
 
         return super.onOptionsItemSelected(item);
@@ -141,7 +154,74 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-    private void refreshNodes() {
+    private void swapMainContent(Fragment fragment) {
+        if (currentFragment == fragment)
+            return;
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .replace(R.id.content_main, fragment)
+                .commit();
+
+        currentFragment = fragment;
+    }
+
+
+    @NonNull
+    private NodeMapFragment makeMapFragment() {
+        // Create a new fragment and specify the planet to show based on position
+        mapFragment = new NodeMapFragment();
+
+        Bundle args = new Bundle();
+        mapFragment.setArguments(args);
+
+        return mapFragment;
+    }
+
+    private void loadNodesInBackground() {
+        AsyncTask<Void, Void, NodeRepository> loadNodesTask = new AsyncTask<Void, Void, NodeRepository>() {
+            @Override
+            protected NodeRepository doInBackground(Void... voids) {
+                NodeRepository loader = new NodeRepository(getApplicationContext());
+                loader.load();
+
+                return loader;
+            }
+
+            @Override
+            protected void onPostExecute(NodeRepository loader) {
+                nodeRepository.setNodes(loader);
+                updateActionButtonEnabled();
+                promptUserForNodeDataIfNecessary();
+            }
+        };
+
+        loadNodesTask.execute();
+    }
+
+    private void promptUserForNodeDataIfNecessary() {
+        if (nodeRepository.hasNodes())
+            return;
+
+        DialogInterface.OnClickListener dialogClickListener = (dialog, which) -> {
+            switch (which) {
+                case DialogInterface.BUTTON_POSITIVE:
+                    updateNodesFromServer();
+                    break;
+                case DialogInterface.BUTTON_NEGATIVE:
+                    break;
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder
+                .setMessage("No node data. Do you want to download node data now?")
+                .setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("No", dialogClickListener)
+                .show();
+    }
+
+    private void updateNodesFromServer() {
         ProgressDialog progressDialog = ProgressDialog.show(this, "Updating Nodes", "Downloading node data", true, false);
 
         AsyncTask<Void, Void, List<Node>> refreshNodesTask = new AsyncTask<Void, Void, List<Node>>() {
@@ -172,14 +252,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 // so make sure it is dismissed in all exit paths of this method
                 if (exception != null) {
                     progressDialog.dismiss();
-                    showError(exception);
+                    showError(exception.toString());
                     return;
                 }
 
-                NodeRepository nodeRepository = ((FreifunkApplication) getApplication()).getNodeRepository();
                 nodeRepository.setNodes(nodes);
 
                 updateSyncInformation(nodes);
+                updateActionButtonEnabled();
 
                 progressDialog.dismiss();
 
@@ -200,10 +280,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         edit.commit();
     }
 
-    private void showError(Exception exception) {
+    private void showError(String text) {
         View view = MainActivity.this.findViewById(R.id.content_main);
 
-        Snackbar snackbar = Snackbar.make(view, exception.toString(), Snackbar.LENGTH_INDEFINITE)
+        Snackbar snackbar = Snackbar.make(view, text, Snackbar.LENGTH_INDEFINITE)
                 .setAction("Action", null);
 
         View snackbarView = snackbar.getView();
@@ -215,28 +295,5 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         snackbar.show();
     }
 
-    private void swapMainContent(Fragment fragment) {
-        if (currentFragment == fragment)
-            return;
-
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction()
-                .replace(R.id.content_main, fragment)
-                .commit();
-
-        currentFragment = fragment;
-    }
-
-
-    @NonNull
-    private NodeMapFragment makeMapFragment() {
-        // Create a new fragment and specify the planet to show based on position
-        mapFragment = new NodeMapFragment();
-
-        Bundle args = new Bundle();
-        mapFragment.setArguments(args);
-
-        return mapFragment;
-    }
 }
 

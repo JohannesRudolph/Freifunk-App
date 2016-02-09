@@ -175,8 +175,9 @@ public class NodeMapFragment extends Fragment implements OnMapReadyCallback {
 
 
     public Location getCurrentLocation() {
-        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
-        return locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
+        // even though this is deprecated, this will ensure a consistent user experience
+        // where the center of the world is what is currently displayed on the map.
+        // retrieving a value from LocationManager typically leads to inconsistent results (or returns null if location is not accurate yet)
+        return googleMap.getMyLocation();
     }
 }

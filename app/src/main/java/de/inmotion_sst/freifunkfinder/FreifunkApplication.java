@@ -17,25 +17,6 @@ public class FreifunkApplication extends Application {
 
         nodeRepository = new NodeRepository(getApplicationContext());
 
-        loadNodesInBackground();
     }
 
-    private void loadNodesInBackground() {
-        AsyncTask<Void, Void, NodeRepository> loadNodesTask = new AsyncTask<Void, Void, NodeRepository>() {
-            @Override
-            protected NodeRepository doInBackground(Void... voids) {
-                NodeRepository loader = new NodeRepository(getApplicationContext());
-                loader.load();
-
-                return loader;
-            }
-
-            @Override
-            protected void onPostExecute(NodeRepository loader) {
-                nodeRepository.setNodes(loader);
-            }
-        };
-
-        loadNodesTask.execute();
-    }
 }

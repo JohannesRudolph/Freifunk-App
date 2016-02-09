@@ -164,4 +164,7 @@ public class NodeRepository extends Observable {
         return f;
     }
 
+    public boolean hasNodes() {
+        return this.nodes.size() > 0;
+    }
 }
