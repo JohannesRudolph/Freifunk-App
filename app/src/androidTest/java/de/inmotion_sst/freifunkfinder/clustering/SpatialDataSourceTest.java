@@ -10,13 +10,16 @@ import org.junit.Test;
 
 import java.util.List;
 
+import de.inmotion_sst.freifunkfinder.clustering.SpatialDataSource;
+import de.inmotion_sst.freifunkfinder.clustering.LocationUtilities;
+
 import static org.junit.Assert.assertEquals;
 
-public class VisibleNonHierarchicalDistanceBasedAlgorithmTest {
+public class SpatialDataSourceTest {
 
     @Test
     public void canFindNodesWithinBoundingBox() throws Exception {
-        VisibleNonHierarchicalDistanceBasedAlgorithm<TestClusterItem> sut = new VisibleNonHierarchicalDistanceBasedAlgorithm<>(1024, 512);
+        SpatialDataSource<TestClusterItem> sut = new SpatialDataSource<>();
 
         TestClusterItem a = new TestClusterItem(new LatLng(49.882309679547, 8.6506497859955));
         TestClusterItem b = new TestClusterItem(new LatLng(49.882250917053, 8.6508965492249));
@@ -28,13 +31,13 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithmTest {
         sut.addItem(a); // FF_Emil-2
         sut.addItem(b); // FF_Emil
 
-        List<TestClusterItem> smallBox = sut.getItems(LocationUtilities.calculateBoundingBox(a.getPosition(), 10));
+        List<TestClusterItem> smallBox = sut.search(LocationUtilities.calculateBoundingBox(a.getPosition(), 10));
 
         assertEquals(1, smallBox.size());
         assertEquals(a, smallBox.get(0));
 
         LatLngBounds bounds = LocationUtilities.calculateBoundingBox(a.getPosition(), 20);
-        List<TestClusterItem> largeBox = sut.getItems(bounds);
+        List<TestClusterItem> largeBox = sut.search(bounds);
 
         assertEquals(2, largeBox.size()); // contains both nodes
 

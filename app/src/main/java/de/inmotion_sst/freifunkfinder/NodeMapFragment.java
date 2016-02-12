@@ -6,9 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.TimingLogger;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -17,8 +15,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Observer;
 
 import de.inmotion_sst.freifunkfinder.clustering.NodeClusterManager;
@@ -94,7 +90,7 @@ public class NodeMapFragment extends SupportMapFragment implements OnMapReadyCal
         clusterManager = new NodeClusterManager<>(getContext(), googleMap);
         clusterManager.setClusterOnlyVisibleArea(true);
 
-        clusterAlgorithm = new VisibleNonHierarchicalDistanceBasedAlgorithm<>(metrics.widthPixels, metrics.heightPixels);
+        clusterAlgorithm = new VisibleNonHierarchicalDistanceBasedAlgorithm<>(metrics.widthPixels, metrics.heightPixels, nodeRepository.getSpatialDataSource());
         clusterManager.setAlgorithm(clusterAlgorithm);
 
         // the interface for configuring a cluster manager is less than ideal...
@@ -121,26 +117,12 @@ public class NodeMapFragment extends SupportMapFragment implements OnMapReadyCal
 
         TimingLogger timing = new TimingLogger(TAG, "refreshNodes");
 
-        clusterManager.clearItems();
-        nodeRepository.getNodes().forEach((x) -> clusterManager.addItem(x));
-
-        timing.addSplit("update cluster manager");
-
         // refresh screen
         clusterManager.onCameraChange(googleMap.getCameraPosition());
 
         timing.addSplit("update map");
 
         timing.dumpToLog();
-    }
-
-    public List<Node> findNodesWithin(Location location, int n, float initialRadius) {
-
-        // todo: ensure this is only called when it makes sense (after map initialised, when we have a location)
-        if (clusterAlgorithm == null)
-            return new ArrayList<>();
-
-        return clusterAlgorithm.findClosestItems(location, n, initialRadius);
     }
 
 

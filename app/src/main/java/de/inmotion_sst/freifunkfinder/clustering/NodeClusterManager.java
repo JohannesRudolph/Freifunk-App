@@ -36,7 +36,7 @@ public class NodeClusterManager<T extends Node> implements GoogleMap.OnCameraCha
     private final MarkerManager.Collection mMarkers;
     private final MarkerManager.Collection mClusterMarkers;
 
-    private Algorithm<T> mAlgorithm;
+    private ClusterAlgorithm<T> mAlgorithm;
     private final ReadWriteLock mAlgorithmLock = new ReentrantReadWriteLock();
     private ClusterRenderer<T> mRenderer;
     private boolean mShowOnlyVisibleArea;
@@ -61,7 +61,6 @@ public class NodeClusterManager<T extends Node> implements GoogleMap.OnCameraCha
         mClusterMarkers = markerManager.newCollection();
         mMarkers = markerManager.newCollection();
         mRenderer = new NodeClusterRenderer<>(context, map, this);
-        mAlgorithm = new NonHierarchicalDistanceBasedAlgorithm<T>();
         mClusterTask = new ClusterTask();
         mRenderer.onAdd();
     }
@@ -93,12 +92,9 @@ public class NodeClusterManager<T extends Node> implements GoogleMap.OnCameraCha
         cluster();
     }
 
-    public void setAlgorithm(Algorithm<T> algorithm) {
+    public void setAlgorithm(ClusterAlgorithm<T> algorithm) {
         mAlgorithmLock.writeLock().lock();
         try {
-            if (mAlgorithm != null) {
-                algorithm.addItems(mAlgorithm.getItems());
-            }
             mAlgorithm = algorithm;
             if (mAlgorithm instanceof GoogleMap.OnCameraChangeListener) {
                 ((GoogleMap.OnCameraChangeListener) mAlgorithm).onCameraChange(mMap.getCameraPosition());
@@ -112,43 +108,6 @@ public class NodeClusterManager<T extends Node> implements GoogleMap.OnCameraCha
 
     public void setClusterOnlyVisibleArea(boolean onlyVisibleArea) {
         mShowOnlyVisibleArea = onlyVisibleArea;
-    }
-
-    public void clearItems() {
-        mAlgorithmLock.writeLock().lock();
-        try {
-            mAlgorithm.clearItems();
-        } finally {
-            mAlgorithmLock.writeLock().unlock();
-        }
-    }
-
-    public void addItems(Collection<T> items) {
-        mAlgorithmLock.writeLock().lock();
-        try {
-            mAlgorithm.addItems(items);
-        } finally {
-            mAlgorithmLock.writeLock().unlock();
-        }
-
-    }
-
-    public void addItem(T myItem) {
-        mAlgorithmLock.writeLock().lock();
-        try {
-            mAlgorithm.addItem(myItem);
-        } finally {
-            mAlgorithmLock.writeLock().unlock();
-        }
-    }
-
-    public void removeItem(T item) {
-        mAlgorithmLock.writeLock().lock();
-        try {
-            mAlgorithm.removeItem(item);
-        } finally {
-            mAlgorithmLock.writeLock().unlock();
-        }
     }
 
     /**

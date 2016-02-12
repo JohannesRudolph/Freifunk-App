@@ -9,7 +9,6 @@ import android.util.TimingLogger;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -18,28 +17,28 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Observable;
 
-import java8.util.function.Consumer;
+import de.inmotion_sst.freifunkfinder.clustering.SpatialDataSource;
 import java8.util.stream.Stream;
 import java8.util.stream.StreamSupport;
 
 public class NodeRepository extends Observable {
     public static final String TAG = "NodeRepository";
+    private final Context context;
+    private final SpatialDataSource<Node> spatialDataSource;
     private List<Node> nodes;
-    private Context context;
 
     public NodeRepository(Context context) {
         this.context = context;
         this.nodes = new ArrayList<>();
+        this.spatialDataSource = new SpatialDataSource<>();
+    }
 
-        Runtime rt = Runtime.getRuntime();
-        long maxMemoryMb = rt.maxMemory() / 1024 /1024;
-
-        Log.d(TAG, String.format("Runtime.maxMemory() = %dMb", maxMemoryMb));
+    public SpatialDataSource<Node> getSpatialDataSource() {
+        return spatialDataSource;
     }
 
     /**
@@ -67,7 +66,8 @@ public class NodeRepository extends Observable {
         InputStream inputStream = conn.getInputStream();
         ObjectMapper mapper = new ObjectMapper();
 
-        List<Node> result = mapper.readValue(inputStream, new TypeReference<ArrayList<Node>>(){});
+        List<Node> result = mapper.readValue(inputStream, new TypeReference<ArrayList<Node>>() {
+        });
 
         timing.addSplit("parsed " + result.size());
         timing.dumpToLog();
@@ -79,20 +79,24 @@ public class NodeRepository extends Observable {
         return StreamSupport.stream(nodes);
     }
 
-    public void setNodes(List<Node> nodes) {
-        this.nodes = nodes;
-        fireNodesChanged();
-    }
 
     public void setNodes(NodeRepository loader) {
-        this.nodes = loader.nodes;
+        setNodes(loader.nodes);
         this.fireNodesChanged();
+    }
+
+    public void setNodes(List<Node> nodes) {
+        this.nodes = nodes;
+        spatialDataSource.clearItems();
+        spatialDataSource.addItems(nodes);
+        fireNodesChanged();
     }
 
     private void fireNodesChanged() {
         this.setChanged();
         this.notifyObservers();
     }
+
     /**
      * Saves nodes to disk
      */
@@ -129,7 +133,7 @@ public class NodeRepository extends Observable {
 
             File f = getFile();
             FileInputStream fileInputStream = new FileInputStream(f);
-            byte[] buffer = new byte[(int)f.length()];
+            byte[] buffer = new byte[(int) f.length()];
             fileInputStream.read(buffer, 0, buffer.length);
             fileInputStream.close();
 
@@ -140,11 +144,11 @@ public class NodeRepository extends Observable {
             parcel.readTypedList(nodes, Node.CREATOR);
             parcel.recycle();
 
-            timing.addSplit("loaded "+nodes.size());
+            timing.addSplit("loaded " + nodes.size());
 
             // trim
             nodes.removeAll(Collections.singleton(null));
-            timing.addSplit("trimmed nulls"+nodes.size());
+            timing.addSplit("trimmed nulls" + nodes.size());
 
             setNodes(nodes);
         } catch (Exception e) {

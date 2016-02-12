@@ -16,7 +16,6 @@ public class FreifunkApplication extends Application {
         super.onCreate();
 
         nodeRepository = new NodeRepository(getApplicationContext());
-
     }
 
 }
