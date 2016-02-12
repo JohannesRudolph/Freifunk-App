@@ -73,11 +73,6 @@ public class NodeClusterRenderer<T extends Node> implements ClusterRenderer<T> {
             new ConcurrentHashMap<MarkerWithPosition, Boolean>());
 
     /**
-     * Icons for each bucket.
-     */
-    private SparseArray<BitmapDescriptor> mIcons = new SparseArray<BitmapDescriptor>();
-
-    /**
      * Markers for single ClusterItems.
      */
     private MarkerCache<T> mMarkerCache = new MarkerCache<T>();
@@ -713,12 +708,10 @@ public class NodeClusterRenderer<T extends Node> implements ClusterRenderer<T> {
      */
     protected void onBeforeClusterRendered(Cluster<T> cluster, MarkerOptions markerOptions) {
         int bucket = getBucket(cluster);
-        BitmapDescriptor descriptor = mIcons.get(bucket);
-        if (descriptor == null) {
-            mColoredCircleBackground.getPaint().setColor(getColor(bucket));
-            descriptor = BitmapDescriptorFactory.fromBitmap(mIconGenerator.makeIcon(getClusterText(cluster)));
-            mIcons.put(bucket, descriptor);
-        }
+
+        mColoredCircleBackground.getPaint().setColor(getColor(bucket));
+        BitmapDescriptor descriptor = BitmapDescriptorFactory.fromBitmap(mIconGenerator.makeIcon(getClusterText(cluster)));
+
         // TODO: consider adding anchor(.5, .5) (Individual markers will overlap more often)
         markerOptions.icon(descriptor);
     }
