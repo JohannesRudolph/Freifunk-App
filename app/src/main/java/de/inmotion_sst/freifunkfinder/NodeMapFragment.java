@@ -1,12 +1,9 @@
 package de.inmotion_sst.freifunkfinder;
 
-import android.content.Context;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
+import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.TimingLogger;
 import android.view.LayoutInflater;
@@ -15,26 +12,23 @@ import android.view.ViewGroup;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observer;
 
-import de.inmotion_sst.freifunkfinder.clustering.LocationUtilities;
 import de.inmotion_sst.freifunkfinder.clustering.NodeClusterManager;
 import de.inmotion_sst.freifunkfinder.clustering.NodeClusterRenderer;
 import de.inmotion_sst.freifunkfinder.clustering.VisibleNonHierarchicalDistanceBasedAlgorithm;
 
-public class NodeMapFragment extends Fragment implements OnMapReadyCallback {
+public class NodeMapFragment extends SupportMapFragment implements OnMapReadyCallback {
 
     public static final String TAG = "NodeMapFragment";
 
-    private MapView mapView;
     private GoogleMap googleMap;
     private NodeRepository nodeRepository;
     private Observer repoObserver;
@@ -42,45 +36,21 @@ public class NodeMapFragment extends Fragment implements OnMapReadyCallback {
     private VisibleNonHierarchicalDistanceBasedAlgorithm<Node> clusterAlgorithm;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // inflate and return the layout
-        View v = inflater.inflate(R.layout.fragment_node_map, container, false);
-        mapView = (MapView) v.findViewById(R.id.map);
-        mapView.onCreate(savedInstanceState);
-        mapView.onResume();// needed to get the map to display immediately
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         nodeRepository = ((FreifunkApplication) getActivity().getApplication()).getNodeRepository();
 
         repoObserver = (o, a) -> refreshNodes();
         nodeRepository.addObserver(repoObserver);
-        mapView.getMapAsync(this);
 
-        return v;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mapView.onResume();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mapView.onPause();
+        this.getMapAsync( this );
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mapView.onDestroy();
         nodeRepository.deleteObserver(repoObserver);
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
     }
 
     @Override
