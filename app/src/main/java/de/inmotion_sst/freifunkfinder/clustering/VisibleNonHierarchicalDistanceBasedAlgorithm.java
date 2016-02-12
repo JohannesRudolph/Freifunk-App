@@ -8,7 +8,6 @@ import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.algo.StaticCluster;
 import com.google.maps.android.geometry.Bounds;
 import com.google.maps.android.geometry.Point;
-import com.google.maps.android.projection.SphericalMercatorProjection;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,16 +35,15 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
 
     public static final int MAX_DISTANCE_AT_ZOOM = 100; // essentially 100 dp.
 
-    private static final SphericalMercatorProjection PROJECTION = new SphericalMercatorProjection(1);
     private final int mScreenWidth;
     private final int mScreenHeight;
-    private final SpatialDataSource<T> mQuadTree;
+    private final SpatialDataSource<T> mDataSource;
     private LatLng mMapCenter;
 
     public VisibleNonHierarchicalDistanceBasedAlgorithm(int screenWidth, int screenHeight, SpatialDataSource<T> quadTree) {
         mScreenWidth = screenWidth;
         mScreenHeight = screenHeight;
-        mQuadTree = quadTree;
+        mDataSource = quadTree;
     }
 
     @Override
@@ -59,12 +57,12 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
         final Map<SpatialDataSource.QuadItem<T>, Double> minDistanceToCluster = new HashMap<SpatialDataSource.QuadItem<T>, Double>();
         final Map<SpatialDataSource.QuadItem<T>, StaticCluster<T>> itemToClusterMapping = new HashMap<SpatialDataSource.QuadItem<T>, StaticCluster<T>>();
 
-        synchronized (mQuadTree) {
+        synchronized (mDataSource) {
 
             Bounds visibleBounds = getVisibleBounds(discreteZoom);
 
             // first, find all visible nodes
-            Collection<SpatialDataSource.QuadItem<T>> visibleNodes = mQuadTree.search(visibleBounds);
+            Collection<SpatialDataSource.QuadItem<T>> visibleNodes = mDataSource.search(visibleBounds);
 
             for (SpatialDataSource.QuadItem<T> candidate : visibleNodes) {
                 // Candidate is already part of a cluster, nothing to do for it
@@ -74,7 +72,7 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
 
                 // search items close to this node
                 Bounds searchBounds = createBoundsFromSpan(candidate.getPoint(), zoomSpecificSpan);
-                Collection<SpatialDataSource.QuadItem<T>> nearbyNodes= mQuadTree.search(searchBounds);
+                Collection<SpatialDataSource.QuadItem<T>> nearbyNodes= mDataSource.search(searchBounds);
 
                 if (nearbyNodes.size() == 1) {
                     // Only the current marker is in range. Just add the single item to the resultClusters.
@@ -131,7 +129,7 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
             return new Bounds(0, 0, 0, 0);
         }
 
-        Point p = PROJECTION.toPoint(mMapCenter);
+        Point p = mDataSource.toPoint(mMapCenter);
 
         final double halfWidthSpan = mScreenWidth / Math.pow(2, zoom) / 256 / 2;
         final double halfHeightSpan = mScreenHeight / Math.pow(2, zoom) / 256 / 2;

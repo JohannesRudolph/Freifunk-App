@@ -122,6 +122,10 @@ public class SpatialDataSource<T extends ClusterItem> {
         return dist;
     }
 
+    public Point toPoint(LatLng mMapCenter) {
+        return PROJECTION.toPoint(mMapCenter);
+    }
+
     public static class QuadItem<T extends ClusterItem> implements PointQuadTree.Item, Cluster<T> {
         private final T mClusterItem;
         private final Point mPoint;
