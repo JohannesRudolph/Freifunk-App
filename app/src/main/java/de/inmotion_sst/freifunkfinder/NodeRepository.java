@@ -79,12 +79,6 @@ public class NodeRepository extends Observable {
         return StreamSupport.stream(nodes);
     }
 
-
-    public void setNodes(NodeRepository loader) {
-        setNodes(loader.nodes);
-        this.fireNodesChanged();
-    }
-
     public void setNodes(List<Node> nodes) {
         this.nodes = nodes;
         spatialDataSource.clearItems();
@@ -125,19 +119,18 @@ public class NodeRepository extends Observable {
     /**
      * Loads nodes from disk
      */
-    public void load() {
+    public static List<Node> load(Context context) {
         TimingLogger timing = new TimingLogger(TAG, "load");
 
+        ArrayList<Node> nodes = new ArrayList<>();
         try {
             Parcel parcel = Parcel.obtain();
 
-            File f = getFile();
+            File f = getFile(context);
             FileInputStream fileInputStream = new FileInputStream(f);
             byte[] buffer = new byte[(int) f.length()];
             fileInputStream.read(buffer, 0, buffer.length);
             fileInputStream.close();
-
-            ArrayList<Node> nodes = new ArrayList<>();
 
             parcel.unmarshall(buffer, 0, buffer.length);
             parcel.setDataPosition(0);
@@ -150,12 +143,13 @@ public class NodeRepository extends Observable {
             nodes.removeAll(Collections.singleton(null));
             timing.addSplit("trimmed nulls" + nodes.size());
 
-            setNodes(nodes);
         } catch (Exception e) {
             Log.d(TAG, "load encountered exception, this is not a problem", e);
         }
 
         timing.dumpToLog();
+
+        return nodes;
     }
 
     @NonNull

@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         int n = Integer.parseInt(preferences.getString(getResources().getString(R.string.prefkey_ar_nodes), "5"));
 
-        List<Node> nodes = nodeRepository.getSpatialDataSource().findNodesWithin(myLocation, n, 200.0f);
+        List<Node> nodes = nodeRepository.getSpatialDataSource().findClosestItems(myLocation, n, 200.0f);
 
         SurroundingNodesSetup setup = new SurroundingNodesSetup(myLocation, StreamSupport.stream(nodes));
 
@@ -179,18 +179,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void loadNodesInBackground() {
-        AsyncTask<Void, Void, NodeRepository> loadNodesTask = new AsyncTask<Void, Void, NodeRepository>() {
+        AsyncTask<Void, Void, List<Node>> loadNodesTask = new AsyncTask<Void, Void, List<Node>>() {
             @Override
-            protected NodeRepository doInBackground(Void... voids) {
-                NodeRepository loader = new NodeRepository(getApplicationContext());
-                loader.load();
-
-                return loader;
+            protected List<Node> doInBackground(Void... voids) {
+                return NodeRepository.load(getApplicationContext());
             }
 
             @Override
-            protected void onPostExecute(NodeRepository loader) {
-                nodeRepository.setNodes(loader);
+            protected void onPostExecute(List<Node> loaded) {
+                nodeRepository.setNodes(loaded);
                 updateActionButtonEnabled();
                 promptUserForNodeDataIfNecessary();
             }

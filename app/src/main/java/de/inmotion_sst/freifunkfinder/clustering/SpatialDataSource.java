@@ -77,10 +77,6 @@ public class SpatialDataSource<T extends ClusterItem> {
         return items;
     }
 
-    public List<T> findNodesWithin(Location location, int n, float initialRadius) {
-        return findClosestItems(location, n, initialRadius);
-    }
-
     public List<T> findClosestItems(Location center, int n, float initialRadius) {
         final int incFactor = 2;
         int found = 0;
@@ -88,6 +84,7 @@ public class SpatialDataSource<T extends ClusterItem> {
 
         LatLng latLng = new LatLng(center.getLatitude(), center.getLongitude());
 
+        // should have a max bound - can potentially loop ad infinitum
         List<T> nodes = null;
         while (found < n) {
             LatLngBounds bounds = LocationUtilities.calculateBoundingBox(latLng, currentDist);
@@ -112,7 +109,6 @@ public class SpatialDataSource<T extends ClusterItem> {
 
         return result;
     }
-
 
     public static double distFrom(double lat1, double lng1, double lat2, double lng2) {
         // calculate distance using Haversine formula

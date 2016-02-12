@@ -1,5 +1,6 @@
 package de.inmotion_sst.freifunkfinder;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.support.test.InstrumentationRegistry;
@@ -29,7 +30,12 @@ public class NodeRepositoryTest {
 
     @NonNull
     private NodeRepository makeSut() {
-        return new NodeRepository(InstrumentationRegistry.getTargetContext());
+        return new NodeRepository(getTestContext());
+    }
+
+    @NonNull
+    public Context getTestContext() {
+        return InstrumentationRegistry.getTargetContext();
     }
 
     @NonNull
@@ -60,7 +66,7 @@ public class NodeRepositoryTest {
         sut.save();
         timing.addSplit("save");
 
-        sut.load();
+        NodeRepository.load(InstrumentationRegistry.getTargetContext());
         timing.addSplit("load");
 
         timing.dumpToSysOut();
@@ -108,7 +114,7 @@ public class NodeRepositoryTest {
         sut.save();
 
         sut = makeSut();
-        sut.load();
+        sut.setNodes(NodeRepository.load(getTestContext()));
 
         assertEquals(1, sut.getNodes().count());
         assertEquals(node.getId(), sut.getNodes().findFirst().get().getId());
@@ -119,7 +125,7 @@ public class NodeRepositoryTest {
     public void load_withoutFile_returnsEmpty() throws Exception {
         NodeRepository sut = makeSut();
 
-        sut.load();
+        sut.setNodes(NodeRepository.load(getTestContext()));
 
         assertEquals(0, sut.getNodes().count());
     }
@@ -134,7 +140,7 @@ public class NodeRepositoryTest {
         fileOutputStream.write(1);
         fileOutputStream.close();
 
-        sut.load();
+        sut.setNodes(NodeRepository.load(getTestContext()));
 
         assertEquals(0, sut.getNodes().count());
     }
