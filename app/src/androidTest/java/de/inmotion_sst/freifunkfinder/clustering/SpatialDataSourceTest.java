@@ -49,6 +49,33 @@ public class SpatialDataSourceTest {
 
     }
 
+
+    @Test
+    public void findClosestItems_enlargesInitialBoundingBox() throws Exception {
+        SpatialDataSource<TestClusterItem> sut = new SpatialDataSource<>();
+
+        TestClusterItem a = new TestClusterItem(new LatLng(49.882309679547, 8.6506497859955));
+        TestClusterItem b = new TestClusterItem(new LatLng(49.882250917053, 8.6508965492249));
+
+        float distanceBetween = distanceBetween(a.getPosition(), b.getPosition());
+
+        sut.addItem(a); // FF_Emil-2
+        sut.addItem(b); // FF_Emil
+
+        List<TestClusterItem> found = sut.findClosestItems(a.getPosition(), 2, distanceBetween/10);
+
+        assertEquals(2, found.size());
+    }
+
+    @Test(timeout = 1000)
+    public void findClosestItems_LimitsSearch() throws Exception {
+        SpatialDataSource<TestClusterItem> sut = new SpatialDataSource<>();
+
+        List<TestClusterItem> found = sut.findClosestItems( new LatLng(49.882309679547, 8.6506497859955), 1, 1.0f);
+
+        assertEquals(0, found.size());
+    }
+
     /*
     private String formatPosition(LatLng position) {
         return String.format("%f %f", position.latitude, position.longitude);

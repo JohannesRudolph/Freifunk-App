@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import java8.util.stream.Stream;
 import java8.util.stream.StreamSupport;
 
 public class SpatialDataSource<T extends ClusterItem> {
@@ -77,29 +78,31 @@ public class SpatialDataSource<T extends ClusterItem> {
         return items;
     }
 
-    public List<T> findClosestItems(Location center, int n, float initialRadius) {
+    public List<T> findClosestItems(LatLng center, int n, float initialRadius) {
         final int incFactor = 2;
         int found = 0;
         float currentDist = initialRadius;
 
-        LatLng latLng = new LatLng(center.getLatitude(), center.getLongitude());
+        Stream<T> nodes = null;
 
-        // should have a max bound - can potentially loop ad infinitum
-        List<T> nodes = null;
-        while (found < n) {
-            LatLngBounds bounds = LocationUtilities.calculateBoundingBox(latLng, currentDist);
-            nodes = search(bounds);
-            currentDist *= incFactor;
+        if (this.mItems.size() < n)
+            nodes = StreamSupport.stream(mItems).map(x -> x.getClusterItem()); // return all nodes
+        else {
+            while (found < n) {
+                LatLngBounds bounds = LocationUtilities.calculateBoundingBox(center, currentDist);
+                List<T> f = search(bounds);
+                currentDist *= incFactor;
 
-            found = nodes.size();
+                found = f.size();
+                nodes = StreamSupport.stream(f);
+            }
         }
 
-        double mlat = center.getLatitude();
-        double mlon = center.getLongitude();
+        double mlat = center.latitude;
+        double mlon = center.longitude;
 
         List<T> result = new ArrayList<>();
-        StreamSupport
-                .stream(nodes)
+        nodes
                 .sorted((x, y) ->
                         Double.compare(
                                 distFrom(mlat, mlon, x.getPosition().latitude, x.getPosition().longitude),
@@ -122,8 +125,8 @@ public class SpatialDataSource<T extends ClusterItem> {
         return dist;
     }
 
-    public Point toPoint(LatLng mMapCenter) {
-        return PROJECTION.toPoint(mMapCenter);
+    public Point toPoint(LatLng latLng) {
+        return PROJECTION.toPoint(latLng);
     }
 
     public static class QuadItem<T extends ClusterItem> implements PointQuadTree.Item, Cluster<T> {

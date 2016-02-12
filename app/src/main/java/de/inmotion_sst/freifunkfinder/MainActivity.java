@@ -27,6 +27,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.Date;
 import java.util.List;
 
@@ -88,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         int n = Integer.parseInt(preferences.getString(getResources().getString(R.string.prefkey_ar_nodes), "5"));
 
-        List<Node> nodes = nodeRepository.getSpatialDataSource().findClosestItems(myLocation, n, 200.0f);
+        List<Node> nodes = nodeRepository.getSpatialDataSource().findClosestItems(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()), n, 200.0f);
 
         SurroundingNodesSetup setup = new SurroundingNodesSetup(myLocation, StreamSupport.stream(nodes));
 
