@@ -40,6 +40,8 @@ import java8.util.stream.StreamSupport;
  * <p>
  * Clusters have the center of the first element (not the centroid of the items within it).
  */
+
+// this is based on https://github.com/googlemaps/android-maps-utils/pull/217
 public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
         implements Algorithm<T>, GoogleMap.OnCameraChangeListener {
 
@@ -104,54 +106,64 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
         final double zoomSpecificSpan = MAX_DISTANCE_AT_ZOOM / Math.pow(2, discreteZoom) / 256;
 
         final Set<QuadItem<T>> visitedCandidates = new HashSet<QuadItem<T>>();
-        final Set<Cluster<T>> results = new HashSet<Cluster<T>>();
-        final Map<QuadItem<T>, Double> distanceToCluster = new HashMap<QuadItem<T>, Double>();
-        final Map<QuadItem<T>, StaticCluster<T>> itemToCluster = new HashMap<QuadItem<T>, StaticCluster<T>>();
+        final Set<Cluster<T>> resultClusters = new HashSet<Cluster<T>>();
+        final Map<QuadItem<T>, Double> minDistanceToCluster = new HashMap<QuadItem<T>, Double>();
+        final Map<QuadItem<T>, StaticCluster<T>> itemToClusterMapping = new HashMap<QuadItem<T>, StaticCluster<T>>();
 
         synchronized (mQuadTree) {
 
             Bounds visibleBounds = getVisibleBounds(discreteZoom);
 
-            Collection<QuadItem<T>> items = mQuadTree.search(visibleBounds);
+            // first, find all visible nodes
+            Collection<QuadItem<T>> visibleNodes = mQuadTree.search(visibleBounds);
 
-            for (QuadItem<T> candidate : items) {
+            for (QuadItem<T> candidate : visibleNodes) {
+                // Candidate is already part of a cluster, nothing to do for it
                 if (visitedCandidates.contains(candidate)) {
-                    // Candidate is already part of another cluster.
                     continue;
                 }
 
+                // search items close to this node
                 Bounds searchBounds = createBoundsFromSpan(candidate.getPoint(), zoomSpecificSpan);
-                Collection<QuadItem<T>> clusterItems;
-                clusterItems = mQuadTree.search(searchBounds);
-                if (clusterItems.size() == 1) {
-                    // Only the current marker is in range. Just add the single item to the results.
-                    results.add(candidate);
+                Collection<QuadItem<T>> nearbyNodes= mQuadTree.search(searchBounds);
+
+                if (nearbyNodes.size() == 1) {
+                    // Only the current marker is in range. Just add the single item to the resultClusters.
+                    resultClusters.add(candidate);
                     visitedCandidates.add(candidate);
-                    distanceToCluster.put(candidate, 0d);
+                    minDistanceToCluster.put(candidate, 0d); // 0d = its at the center of its N=1 cluster
                     continue;
                 }
-                StaticCluster<T> cluster = new StaticCluster<T>(candidate.mClusterItem.getPosition());
-                results.add(cluster);
 
-                for (QuadItem<T> clusterItem : clusterItems) {
-                    Double existingDistance = distanceToCluster.get(clusterItem);
+                // build a new cluster around this node
+                StaticCluster<T> cluster = new StaticCluster<T>(candidate.mClusterItem.getPosition());
+                resultClusters.add(cluster);
+
+                for (QuadItem<T> clusterItem : nearbyNodes) {
+                    Double existingDistance = minDistanceToCluster.get(clusterItem);
                     double distance = distanceSquared(clusterItem.getPoint(), candidate.getPoint());
-                    if (existingDistance != null) {
-                        // Item already belongs to another cluster. Check if it's closer to this cluster.
-                        if (existingDistance < distance) {
+
+                    boolean itemBelongsToAnotherCluster = existingDistance != null;
+                    if (itemBelongsToAnotherCluster) {
+                        boolean isAlreadyInCloserCluster = existingDistance < distance;
+                        if (isAlreadyInCloserCluster) {
                             continue;
                         }
-                        // Move item to the closer cluster.
-                        itemToCluster.get(clusterItem).remove(clusterItem.mClusterItem);
+
+                        // remove item from current cluster
+                        itemToClusterMapping.get(clusterItem).remove(clusterItem.mClusterItem);
                     }
-                    distanceToCluster.put(clusterItem, distance);
-                    cluster.add(clusterItem.mClusterItem);
-                    itemToCluster.put(clusterItem, cluster);
+
+                    minDistanceToCluster.put(clusterItem, distance); // update min distance
+                    cluster.add(clusterItem.mClusterItem); // add to new cluster
+                    itemToClusterMapping.put(clusterItem, cluster); // record mapping
                 }
-                visitedCandidates.addAll(clusterItems);
+
+                // record all nearbyNodes as visited
+                visitedCandidates.addAll(nearbyNodes);
             }
         }
-        return results;
+        return resultClusters;
     }
 
     @Override
@@ -170,8 +182,7 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
     }
 
     private Bounds createBoundsFromSpan(Point p, double span) {
-        // TODO: Use a span that takes into account the visual size of the marker, not just its
-        // LatLng.
+        // TODO: Use a span that takes into account the visual size of the marker, not just its LatLng.
         double halfSpan = span / 2;
         return new Bounds(
                 p.x - halfSpan, p.x + halfSpan,
