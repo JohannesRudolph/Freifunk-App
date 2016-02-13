@@ -113,6 +113,7 @@ public class CameraView extends AspectFitSurfaceLayout implements SurfaceHolder.
     }
 
     private void notifyCallback(Camera.Parameters p) {
+        // see http://stackoverflow.com/a/12118760/125407 for explanation
         final float defaultHfov = 80.0f;
 
         int zoom = p.getZoomRatios().get(p.getZoom()).intValue();
@@ -128,6 +129,7 @@ public class CameraView extends AspectFitSurfaceLayout implements SurfaceHolder.
         double hfov = Math.toDegrees(thetaH);
         double vfov = Math.toDegrees(thetaV);
         if (hfov > 179.0f && hfov < 181.0f) {
+            // this happens e.g. on Nexus 7 (2013)
             Log.d(TAG, "received nonsensical view angles from camera, setting to default values...");
             hfov = defaultHfov;
             vfov = hfov / aspect;
