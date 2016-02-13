@@ -6,7 +6,7 @@ import android.view.SurfaceView;
 import android.view.ViewGroup;
 
 /**
- * Fits a child SurfaceView while maintaining the original aspect ratio.
+ * Fits a child SurfaceView to the maximum possible size while maintaining the original aspect ratio.
  * See http://stackoverflow.com/a/24671000/125407 for terminology
  */
 public class AspectFitSurfaceLayout extends ViewGroup {
