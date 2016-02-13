@@ -5,8 +5,6 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
 
 import java.io.IOException;
 import java.util.List;
@@ -17,13 +15,13 @@ import java8.util.stream.StreamSupport;
 // TODO: think about whether we want to force this to be always larger than the screen (so no black bars anywhere)
 
 @SuppressWarnings("deprecation") // can't use CameraApi2 <= API 21, hence disable the deprecation warning for the old CameraApi
-public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
+public class CameraView extends AspectFitSurfaceLayout implements SurfaceHolder.Callback {
     public interface CameraParametersCallback {
         /**
-         * @param width width of preview
+         * @param width  width of preview
          * @param height height of preview
-         * @param hfov horizontal FOV in degrees
-         * @param vfov vertical FOV in degrees
+         * @param hfov   horizontal FOV in degrees
+         * @param vfov   vertical FOV in degrees
          */
         void cameraPreviewChanged(int width, int height, double hfov, double vfov);
     }
@@ -32,22 +30,17 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
 
     private final CameraParametersCallback parametersCallback;
 
-    private SurfaceView surfaceView;
     private SurfaceHolder surfaceHolder;
     private Camera.Size previewSize;
     private List<Camera.Size> supportedPreviewSizes;
     private Camera camera;
-    private boolean forceSurfaceLayout;
 
     public CameraView(Context context, CameraParametersCallback parametersCallback) {
-        super(context);
+        super(context, new SurfaceView(context));
         this.parametersCallback = parametersCallback;
 
-        surfaceView = new SurfaceView(context);
-        addView(surfaceView, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-
         // install a SurfaceHolder.Callback for notifications when the underlying surface is created and destroyed
-        surfaceHolder = surfaceView.getHolder();
+        surfaceHolder = getChild().getHolder();
         surfaceHolder.addCallback(this);
     }
 
@@ -58,33 +51,10 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
         // of stretching it.
         final int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
+
         setMeasuredDimension(width, height);
 
         Log.v(TAG, String.format("onMeasure, dimensions %dw|%dh", width, height));
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        Log.v(TAG, String.format("onLayout(%b, %d, %d, %d, %d), forceSurfaceLayout %b", changed, l, t, r, b, forceSurfaceLayout));
-
-        if (changed || forceSurfaceLayout) {
-            forceSurfaceLayout = false;
-
-            final int width = r - l;
-            final int height = b - t;
-
-            int previewWidth = width;
-            int previewHeight = height;
-
-            if (previewSize != null) {
-                previewWidth = previewSize.width;
-                previewHeight = previewSize.height;
-            }
-
-            Log.v(TAG, String.format("onLayout, dimensions: %dw|%dh, preview: %dw|%dh", width, height, previewWidth, previewHeight));
-
-            LayoutUtilities.aspectFitChild(surfaceView, width, height, previewWidth, previewHeight);
-        }
     }
 
 
@@ -124,10 +94,9 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
         tryApplyAspectRatioFixForBuggyDevices(parameters);
         trySetAutofocus(parameters);
 
-        if (previewSizeChanged){
+        if (previewSizeChanged) {
             // need to force surface layout when we change camera preview size, even if view dimensions on screen didn't change
-            forceSurfaceLayout = previewSizeChanged;
-            requestLayout();
+            setChildSize(previewSize.width, previewSize.height);
 
             // not all devices support changing parameters while preview is running so stop it beforehand
             // this does nothing if camera wasn't started yet
@@ -158,7 +127,7 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
 
         double hfov = Math.toDegrees(thetaH);
         double vfov = Math.toDegrees(thetaV);
-        if (hfov > 179.0f && hfov < 181.0f ){
+        if (hfov > 179.0f && hfov < 181.0f) {
             Log.d(TAG, "received nonsensical view angles from camera, setting to default values...");
             hfov = defaultHfov;
             vfov = hfov / aspect;
@@ -239,6 +208,8 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
 
             // reset preview size and supported preview sizes
             previewSize = null;
+            resetChildSize();
+
             supportedPreviewSizes = null;
         }
     }
@@ -255,6 +226,8 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
 
             // reset preview size and supported preview sizes
             previewSize = null;
+            resetChildSize();
+
             supportedPreviewSizes = this.camera.getParameters().getSupportedPreviewSizes();
         } catch (IOException exception) {
             Log.e(TAG, "IOException in surfaceCreated:", exception);

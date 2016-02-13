@@ -52,10 +52,10 @@ public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
 
         final double zoomSpecificSpan = MAX_DISTANCE_AT_ZOOM / Math.pow(2, discreteZoom) / 256;
 
-        final HashSet<SpatialDataSource.QuadItem<T>> visitedCandidates = new HashSet<SpatialDataSource.QuadItem<T>>();
-        final Set<Cluster<T>> resultClusters = new HashSet<Cluster<T>>();
-        final Map<SpatialDataSource.QuadItem<T>, Double> minDistanceToCluster = new HashMap<SpatialDataSource.QuadItem<T>, Double>();
-        final Map<SpatialDataSource.QuadItem<T>, StaticCluster<T>> itemToClusterMapping = new HashMap<SpatialDataSource.QuadItem<T>, StaticCluster<T>>();
+        final HashSet<SpatialDataSource.QuadItem<T>> visitedCandidates = new HashSet<>();
+        final Set<Cluster<T>> resultClusters = new HashSet<>();
+        final Map<SpatialDataSource.QuadItem<T>, Double> minDistanceToCluster = new HashMap<>();
+        final Map<SpatialDataSource.QuadItem<T>, StaticCluster<T>> itemToClusterMapping = new HashMap<>();
 
         synchronized (mDataSource) {
 

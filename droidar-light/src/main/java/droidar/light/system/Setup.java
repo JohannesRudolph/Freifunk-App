@@ -15,7 +15,7 @@ import droidar.light.world.SystemUpdater;
 import droidar.light.world.World;
 
 
-public abstract class Setup {
+public abstract class Setup implements CameraView.CameraParametersCallback {
 
     private static final String LOG_TAG = "Setup";
 
@@ -30,7 +30,7 @@ public abstract class Setup {
     private SensorInputManager sensorInput;
 
     private TransparentGLSurfaceView glView;
-    private AspectFitLayout augmentationOverlay;
+    private AspectFitSurfaceLayout augmentationOverlay;
     private CameraView cameraView;
     private View guiOverlay;
     ;
@@ -47,9 +47,6 @@ public abstract class Setup {
         return glRenderer;
     }
 
-    public AspectFitLayout getAugmentationOverlay() {
-        return augmentationOverlay;
-    }
     /**
      * This method has to be executed in the activity which want to display the
      * AR content. In your activity do something like this:
@@ -89,7 +86,7 @@ public abstract class Setup {
 
         cameraView = buildCameraView(targetActivity);
         glView = buildGlView(glRenderer);
-        augmentationOverlay = new AspectFitLayout(targetActivity, glView);
+        augmentationOverlay = new AspectFitSurfaceLayout(targetActivity, glView);
 
         guiOverlay = buildGuiOverlayView(targetActivity);
 
@@ -110,9 +107,11 @@ public abstract class Setup {
 
     protected abstract void initializeSensorInputListeners(SensorInputManager sensorInput, SystemUpdater updater);
 
-    protected abstract CameraView buildCameraView(Activity a);
+    private CameraView buildCameraView(Activity a){
+        return new CameraView(a, this);
+    }
 
-    protected TransparentGLSurfaceView buildGlView(GLRenderer glRenderer) {
+    private TransparentGLSurfaceView buildGlView(GLRenderer glRenderer) {
         TransparentGLSurfaceView arView = new TransparentGLSurfaceView(targetActivity);
         arView.setRenderer(glRenderer);
 
@@ -120,6 +119,15 @@ public abstract class Setup {
     }
 
     protected abstract View buildGuiOverlayView(Activity activity);
+
+    @Override
+    public void cameraPreviewChanged(int width, int height, double hfov, double vfov) {
+        // update gl surface size
+        augmentationOverlay.setChildSize(width, height);
+
+        // update gl renderer projection matrix
+        getGlRenderer().setFov((float)hfov, (float) vfov, (float)width/(float)height);
+    }
 
     /**
      * see {@link Activity#onDestroy}

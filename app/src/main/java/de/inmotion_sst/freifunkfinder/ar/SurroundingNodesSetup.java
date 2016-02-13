@@ -2,7 +2,6 @@ package de.inmotion_sst.freifunkfinder.ar;
 
 import android.app.Activity;
 import android.location.Location;
-import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -15,14 +14,13 @@ import droidar.light.gl.GLFactory;
 import droidar.light.gl.GLRenderer;
 import droidar.light.gl.textures.TextureManager;
 import droidar.light.sensors.SensorInputManager;
-import droidar.light.system.AspectFitLayout;
 import droidar.light.system.CameraView;
 import droidar.light.system.Setup;
 import droidar.light.world.SystemUpdater;
 import droidar.light.world.World;
 import java8.util.stream.Stream;
 
-public class SurroundingNodesSetup extends Setup implements CameraView.CameraParametersCallback {
+public class SurroundingNodesSetup extends Setup {
 
     private final Location zeroLocation;
     private final Stream<Node> nodes;
@@ -61,23 +59,10 @@ public class SurroundingNodesSetup extends Setup implements CameraView.CameraPar
     }
 
     @Override
-    protected CameraView buildCameraView(Activity a) {
-        return new CameraView(a, this);
-    }
-
-    @Override
     public View buildGuiOverlayView(Activity activity) {
         // can also inflate from xml when required
         return new FrameLayout(activity);
     }
 
-    @Override
-    public void cameraPreviewChanged(int width, int height, double hfov, double vfov) {
-        // update gl surface size
-        getAugmentationOverlay().setChildSize(width, height);
-
-        // update gl renderer projection matrix
-        getGlRenderer().setFov((float)hfov, (float) vfov, (float)width/(float)height);
-    }
 }
 
