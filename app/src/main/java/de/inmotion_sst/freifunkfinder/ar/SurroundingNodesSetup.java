@@ -15,6 +15,7 @@ import droidar.light.gl.GLFactory;
 import droidar.light.gl.GLRenderer;
 import droidar.light.gl.textures.TextureManager;
 import droidar.light.sensors.SensorInputManager;
+import droidar.light.system.AspectFitLayout;
 import droidar.light.system.CameraView;
 import droidar.light.system.Setup;
 import droidar.light.world.SystemUpdater;
@@ -72,8 +73,11 @@ public class SurroundingNodesSetup extends Setup implements CameraView.CameraPar
 
     @Override
     public void cameraPreviewChanged(int width, int height, double hfov, double vfov) {
+        // update gl surface size
+        getAugmentationOverlay().setChildSize(width, height);
 
-        getGlRenderer().setFov((float)Math.toDegrees(hfov), (float)Math.toDegrees(vfov), (float)width/(float)height);
+        // update gl renderer projection matrix
+        getGlRenderer().setFov((float)hfov, (float) vfov, (float)width/(float)height);
     }
 }
 

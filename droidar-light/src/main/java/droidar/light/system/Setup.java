@@ -9,7 +9,6 @@ import android.view.ViewGroup.LayoutParams;
 import droidar.light.gl.GLCamera;
 import droidar.light.gl.GLFactory;
 import droidar.light.gl.GLRenderer;
-import droidar.light.gl.TransparentGLSurfaceView;
 import droidar.light.gl.textures.TextureManager;
 import droidar.light.sensors.SensorInputManager;
 import droidar.light.world.SystemUpdater;
@@ -31,6 +30,7 @@ public abstract class Setup {
     private SensorInputManager sensorInput;
 
     private TransparentGLSurfaceView glView;
+    private AspectFitLayout augmentationOverlay;
     private CameraView cameraView;
     private View guiOverlay;
     ;
@@ -45,6 +45,10 @@ public abstract class Setup {
 
     public GLRenderer getGlRenderer() {
         return glRenderer;
+    }
+
+    public AspectFitLayout getAugmentationOverlay() {
+        return augmentationOverlay;
     }
     /**
      * This method has to be executed in the activity which want to display the
@@ -85,11 +89,13 @@ public abstract class Setup {
 
         cameraView = buildCameraView(targetActivity);
         glView = buildGlView(glRenderer);
+        augmentationOverlay = new AspectFitLayout(targetActivity, glView);
+
         guiOverlay = buildGuiOverlayView(targetActivity);
 
         // add the camera view at bottom, glView in the middle and guiOverlay on top
         targetActivity.addContentView(cameraView, layoutParams(LayoutParams.MATCH_PARENT));
-        targetActivity.addContentView(glView, layoutParams(LayoutParams.MATCH_PARENT));
+        targetActivity.addContentView(augmentationOverlay, layoutParams(LayoutParams.MATCH_PARENT));
         targetActivity.addContentView(guiOverlay, layoutParams(LayoutParams.MATCH_PARENT));
     }
 

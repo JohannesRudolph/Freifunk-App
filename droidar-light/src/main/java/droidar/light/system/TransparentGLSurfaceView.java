@@ -1,4 +1,4 @@
-package droidar.light.gl;
+package droidar.light.system;
 
 import android.content.Context;
 import android.graphics.PixelFormat;

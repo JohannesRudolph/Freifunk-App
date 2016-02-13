@@ -8,6 +8,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import droidar.light.gl.textures.TextureManager;
+import droidar.light.system.TransparentGLSurfaceView;
 import droidar.light.world.World;
 
 /**
@@ -137,8 +138,7 @@ public class GL1Renderer extends GLRenderer {
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-
-        Log.d("Activity", "GLSurfaceView.onSurfaceCreated");
+        Log.d(TAG, "GLSurfaceView.onSurfaceCreated");
 
         // Set the background color to black (and alpha to 0) ( rgba ).
         gl.glClearColor(0, 0, 0, 0);

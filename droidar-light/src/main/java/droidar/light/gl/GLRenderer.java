@@ -63,12 +63,6 @@ public abstract class GLRenderer implements Renderer {
      * @param vfov vertical FOV in degrees
      */
     public void setFov(float hfov, float vfov, float aspectRatio){
-        if (hfov > 179.0f && hfov < 181.0f ){
-            Log.d(TAG, "received nonsensical view angles from camera, correcting...");
-            hfov = 80.0f;
-            vfov = hfov / aspectRatio;
-        }
-
         fovHorizontal = hfov;
         fovVertical = vfov;
         this.aspectRatio = aspectRatio;

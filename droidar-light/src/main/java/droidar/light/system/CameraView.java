@@ -5,6 +5,7 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.ViewGroup;
 
 import java.io.IOException;
@@ -18,6 +19,12 @@ import java8.util.stream.StreamSupport;
 @SuppressWarnings("deprecation") // can't use CameraApi2 <= API 21, hence disable the deprecation warning for the old CameraApi
 public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
     public interface CameraParametersCallback {
+        /**
+         * @param width width of preview
+         * @param height height of preview
+         * @param hfov horizontal FOV in degrees
+         * @param vfov vertical FOV in degrees
+         */
         void cameraPreviewChanged(int width, int height, double hfov, double vfov);
     }
 
@@ -76,27 +83,10 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
 
             Log.v(TAG, String.format("onLayout, dimensions: %dw|%dh, preview: %dw|%dh", width, height, previewWidth, previewHeight));
 
-            int cl, ct, cr, cb;
-
-            // Center the child SurfaceView within the parent.
-            if (width * previewHeight > height * previewWidth) {
-                final int scaledChildWidth = previewWidth * height / previewHeight;
-                cl = (width - scaledChildWidth) / 2;
-                ct = 0;
-                cr = (width + scaledChildWidth) / 2;
-                cb = height;
-            } else {
-                final int scaledChildHeight = previewHeight * width / previewWidth;
-                cl = 0;
-                ct = (height - scaledChildHeight) / 2;
-                cr = width;
-                cb = (height + scaledChildHeight) / 2;
-            }
-
-            Log.v(TAG, String.format("onLayout, child.layout(%d, %d, %d, %d)", cl, ct, cr, cb));
-            surfaceView.layout(cl, ct, cr, cb);
+            LayoutUtilities.aspectFitChild(surfaceView, width, height, previewWidth, previewHeight);
         }
     }
+
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
@@ -154,6 +144,8 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
     }
 
     private void notifyCallback(Camera.Parameters p) {
+        final float defaultHfov = 80.0f;
+
         int zoom = p.getZoomRatios().get(p.getZoom()).intValue();
         Camera.Size sz = p.getPreviewSize();
 
@@ -161,10 +153,19 @@ public class CameraView extends ViewGroup implements SurfaceHolder.Callback {
         double thetaV = Math.toRadians(p.getVerticalViewAngle());
         double thetaH = 2d * Math.atan(aspect * Math.tan(thetaV / 2));
 
-        //thetaV = 2d * Math.atan(100d * Math.tan(thetaV / 2d) / zoom);
-        //thetaH = 2d * Math.atan(100d * Math.tan(thetaH / 2d) / zoom);
+        thetaV = 2d * Math.atan(100d * Math.tan(thetaV / 2d) / zoom);
+        thetaH = 2d * Math.atan(100d * Math.tan(thetaH / 2d) / zoom);
 
-        parametersCallback.cameraPreviewChanged(sz.width, sz.height, thetaH, thetaV);
+        double hfov = Math.toDegrees(thetaH);
+        double vfov = Math.toDegrees(thetaV);
+        if (hfov > 179.0f && hfov < 181.0f ){
+            Log.d(TAG, "received nonsensical view angles from camera, setting to default values...");
+            hfov = defaultHfov;
+            vfov = hfov / aspect;
+        }
+
+        Log.v(TAG, String.format("notifyCallback, cameraPreviewChanged(%d, %d, %.1f, %.1f)", sz.width, sz.height, hfov, vfov));
+        parametersCallback.cameraPreviewChanged(sz.width, sz.height, hfov, vfov);
     }
 
     private void trySetAutofocus(Camera.Parameters parameters) {
