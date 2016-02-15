@@ -7,14 +7,13 @@ import android.widget.FrameLayout;
 
 import de.inmotion_sst.freifunkfinder.Node;
 import droidar.light.actions.ActionMoveCameraBuffered;
-import droidar.light.actions.ActionRotateCameraBuffered;
+import droidar.light.actions.ActionRotateCamera;
 import droidar.light.gl.GL1Renderer;
 import droidar.light.gl.GLCamera;
 import droidar.light.gl.GLFactory;
 import droidar.light.gl.GLRenderer;
 import droidar.light.gl.textures.TextureManager;
 import droidar.light.sensors.SensorInputManager;
-import droidar.light.system.CameraView;
 import droidar.light.system.Setup;
 import droidar.light.world.SystemUpdater;
 import droidar.light.world.World;
@@ -47,7 +46,7 @@ public class SurroundingNodesSetup extends Setup {
 
     @Override
     public void initializeSensorInputListeners(SensorInputManager sensorInput, SystemUpdater updater) {
-        ActionRotateCameraBuffered rotate = new ActionRotateCameraBuffered(getCamera());
+        ActionRotateCamera rotate = new ActionRotateCamera(getCamera());
         //updater.addObjectToUpdateCycle(rotate);
 
         sensorInput.addRotationMatrixListener(rotate);
