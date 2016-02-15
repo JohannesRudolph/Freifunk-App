@@ -51,7 +51,7 @@ public class NodeRepository extends Observable {
     public static List<Node> fetchNodeList() throws IOException, HttpException {
         TimingLogger timing = new TimingLogger(TAG, "fetchNodeList");
 
-        HttpURLConnection conn = (HttpURLConnection) new URL("http://freifunk.inmotion-sst.de/nodes-de.json").openConnection();
+        HttpURLConnection conn = (HttpURLConnection) new URL("http://freifunk.inmotion-sst.de/data.php").openConnection();
         conn.setRequestMethod("GET");
         conn.setAllowUserInteraction(false);
         conn.setConnectTimeout(3000);
